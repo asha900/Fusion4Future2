@@ -57,7 +57,7 @@ const Header = () => {
           </div>
           
           <div className="hidden md:flex items-center space-x-8">
-            {['Basics', 'Process', 'Benefits', 'Challenges', 'Projects', 'Future'].map((item) => (
+            {['Basics', 'Process', 'Simulation', 'Benefits', 'Challenges', 'Projects', 'Future'].map((item) => (
               <button
                 key={item}
                 onClick={() => scrollToSection(item.toLowerCase())}
@@ -93,7 +93,7 @@ const Header = () => {
           <div className={`md:hidden mt-4 pb-4 border-t transition-colors duration-300 ${
             isDarkMode ? 'border-slate-700' : 'border-gray-200'
           }`}>
-            {['Basics', 'Process', 'Benefits', 'Challenges', 'Projects', 'Future'].map((item) => (
+            {['Basics', 'Process', 'Simulation', 'Benefits', 'Challenges', 'Projects', 'Future'].map((item) => (
               <button
                 key={item}
                 onClick={() => scrollToSection(item.toLowerCase())}
