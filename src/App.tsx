@@ -1,4 +1,5 @@
 import React from 'react';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Basics from './components/Basics';
@@ -11,17 +12,19 @@ import Footer from './components/Footer';
 
 function App() {
   return (
-    <div className="min-h-screen bg-slate-900">
-      <Header />
-      <Hero />
-      <Basics />
-      <Process />
-      <Benefits />
-      <Challenges />
-      <Projects />
-      <Future />
-      <Footer />
-    </div>
+    <ThemeProvider>
+      <div className="min-h-screen transition-colors duration-500 dark:bg-slate-900 bg-gray-50">
+        <Header />
+        <Hero />
+        <Basics />
+        <Process />
+        <Benefits />
+        <Challenges />
+        <Projects />
+        <Future />
+        <Footer />
+      </div>
+    </ThemeProvider>
   );
 }
 

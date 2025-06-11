@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Play, Pause } from 'lucide-react';
+import { ChevronDown, Play, Pause, ExternalLink } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Hero = () => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [particleCount, setParticleCount] = useState(50);
+  const { isDarkMode } = useTheme();
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -20,17 +22,29 @@ const Hero = () => {
     setParticleCount(count);
   };
 
+  const openSimulation = () => {
+    window.open('https://visualize-it.github.io/nuclear_fusion/simulation.html', '_blank');
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Interactive animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900">
+      {/* Dynamic background based on theme */}
+      <div className={`absolute inset-0 transition-all duration-500 ${
+        isDarkMode 
+          ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900' 
+          : 'bg-gradient-to-br from-blue-50 via-indigo-100 to-purple-100'
+      }`}>
         <div className="absolute inset-0 opacity-30">
           {[...Array(particleCount)].map((_, i) => (
             <div
               key={i}
-              className={`absolute rounded-full bg-gradient-to-r from-blue-400 to-purple-400 ${
+              className={`absolute rounded-full cursor-pointer hover:scale-150 transition-transform duration-300 ${
                 isPlaying ? 'animate-pulse' : ''
-              } cursor-pointer hover:scale-150 transition-transform duration-300`}
+              } ${
+                isDarkMode 
+                  ? 'bg-gradient-to-r from-blue-400 to-purple-400' 
+                  : 'bg-gradient-to-r from-blue-500 to-purple-500'
+              }`}
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -40,9 +54,10 @@ const Hero = () => {
                 animationDuration: `${Math.random() * 4 + 2}s`,
               }}
               onClick={() => {
-                // Create ripple effect on click
                 const ripple = document.createElement('div');
-                ripple.className = 'absolute rounded-full bg-blue-400 opacity-50 animate-ping pointer-events-none';
+                ripple.className = `absolute rounded-full opacity-50 animate-ping pointer-events-none ${
+                  isDarkMode ? 'bg-blue-400' : 'bg-blue-600'
+                }`;
                 ripple.style.width = '20px';
                 ripple.style.height = '20px';
                 ripple.style.left = `${Math.random() * 100}%`;
@@ -57,11 +72,21 @@ const Hero = () => {
       </div>
 
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
-        <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight animate-fade-in">
-          Nuclear
-          <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-purple-400 hover:to-blue-400 transition-all duration-500 cursor-pointer"> Fusion</span>
+        <h1 className={`text-5xl md:text-7xl font-bold mb-6 leading-tight animate-fade-in transition-colors duration-500 ${
+          isDarkMode ? 'text-white' : 'text-gray-900'
+        }`}>
+          Fusion 4
+          <span className={`bg-gradient-to-r bg-clip-text text-transparent hover:from-purple-400 hover:to-blue-400 transition-all duration-500 cursor-pointer ${
+            isDarkMode 
+              ? 'from-blue-400 to-purple-400' 
+              : 'from-blue-600 to-purple-600'
+          }`}>
+            {' '}Future
+          </span>
         </h1>
-        <p className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed animate-slide-up">
+        <p className={`text-xl md:text-2xl mb-8 leading-relaxed animate-slide-up transition-colors duration-500 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-600'
+        }`}>
           The power of the stars, harnessed for humanity's future
         </p>
         
@@ -69,15 +94,34 @@ const Hero = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
           <button
             onClick={() => scrollToSection('basics')}
-            className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25"
+            className={`px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 hover:shadow-lg hover:shadow-blue-500/25' 
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:shadow-lg hover:shadow-blue-600/25'
+            }`}
           >
             Explore the Science
           </button>
           <button
             onClick={() => scrollToSection('process')}
-            className="px-8 py-3 border-2 border-blue-400 text-blue-400 rounded-full hover:bg-blue-400 hover:text-white transition-all duration-300 hover:shadow-lg hover:shadow-blue-400/25"
+            className={`px-8 py-3 rounded-full transition-all duration-300 border-2 hover:shadow-lg ${
+              isDarkMode 
+                ? 'border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white hover:shadow-blue-400/25' 
+                : 'border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white hover:shadow-blue-600/25'
+            }`}
           >
             How It Works
+          </button>
+          <button
+            onClick={openSimulation}
+            className={`flex items-center gap-2 px-8 py-3 rounded-full transition-all duration-300 border-2 hover:shadow-lg ${
+              isDarkMode 
+                ? 'border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white hover:shadow-purple-400/25' 
+                : 'border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:shadow-purple-600/25'
+            }`}
+          >
+            <ExternalLink className="w-4 h-4" />
+            Live Simulation
           </button>
         </div>
 
@@ -85,29 +129,47 @@ const Hero = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
           <button
             onClick={toggleAnimation}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 backdrop-blur-sm text-white rounded-full hover:bg-slate-600/50 transition-all duration-300"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 backdrop-blur-sm ${
+              isDarkMode 
+                ? 'bg-slate-700/50 text-white hover:bg-slate-600/50' 
+                : 'bg-white/50 text-gray-900 hover:bg-white/70'
+            }`}
           >
             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             {isPlaying ? 'Pause' : 'Play'} Animation
           </button>
           <div className="flex items-center gap-2">
-            <span className="text-white text-sm">Particles:</span>
+            <span className={`text-sm transition-colors duration-500 ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>
+              Particles:
+            </span>
             <input
               type="range"
               min="10"
               max="100"
               value={particleCount}
               onChange={(e) => adjustParticles(parseInt(e.target.value))}
-              className="w-20 h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
+              className={`w-20 h-2 rounded-lg appearance-none cursor-pointer slider ${
+                isDarkMode ? 'bg-slate-600' : 'bg-gray-300'
+              }`}
             />
-            <span className="text-white text-sm">{particleCount}</span>
+            <span className={`text-sm transition-colors duration-500 ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>
+              {particleCount}
+            </span>
           </div>
         </div>
       </div>
 
       <button
         onClick={() => scrollToSection('basics')}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce hover:text-blue-400 transition-colors duration-300"
+        className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce transition-colors duration-500 ${
+          isDarkMode 
+            ? 'text-white hover:text-blue-400' 
+            : 'text-gray-900 hover:text-blue-600'
+        }`}
       >
         <ChevronDown className="w-8 h-8" />
       </button>
@@ -132,7 +194,7 @@ const Hero = () => {
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: #3b82f6;
+          background: ${isDarkMode ? '#3b82f6' : '#1d4ed8'};
           cursor: pointer;
         }
       `}</style>
