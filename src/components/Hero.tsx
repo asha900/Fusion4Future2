@@ -1,10 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Play, Pause, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronRight, Play, Pause, ExternalLink } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
-const Hero = () => {
+interface HeroProps {
+  onNavigateToExperiment: () => void;
+}
+
+const Hero: React.FC<HeroProps> = ({ onNavigateToExperiment }) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [particleCount, setParticleCount] = useState(50);
+  const [particles, setParticles] = useState<Array<{
+    id: number;
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    size: number;
+    opacity: number;
+  }>>([]);
   const { isDarkMode } = useTheme();
 
   const scrollToSection = (sectionId: string) => {
@@ -26,49 +39,101 @@ const Hero = () => {
     window.open('https://visualize-it.github.io/nuclear_fusion/simulation.html', '_blank');
   };
 
+  // Initialize and animate particles
+  useEffect(() => {
+    const newParticles = Array.from({ length: particleCount }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      size: Math.random() * 4 + 2,
+      opacity: Math.random() * 0.8 + 0.2
+    }));
+    setParticles(newParticles);
+  }, [particleCount]);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const interval = setInterval(() => {
+      setParticles(prevParticles => 
+        prevParticles.map(particle => ({
+          ...particle,
+          x: (particle.x + particle.vx + 100) % 100,
+          y: (particle.y + particle.vy + 100) % 100,
+          opacity: 0.2 + Math.sin(Date.now() * 0.001 + particle.id) * 0.3 + 0.3
+        }))
+      );
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Dynamic background based on theme */}
+      {/* Parallax background layers */}
       <div className={`absolute inset-0 transition-all duration-500 ${
         isDarkMode 
           ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900' 
           : 'bg-gradient-to-br from-blue-50 via-indigo-100 to-purple-100'
       }`}>
-        <div className="absolute inset-0 opacity-30">
-          {[...Array(particleCount)].map((_, i) => (
+        {/* Animated particles */}
+        <div className="absolute inset-0">
+          {particles.map((particle) => (
             <div
-              key={i}
+              key={particle.id}
               className={`absolute rounded-full cursor-pointer hover:scale-150 transition-transform duration-300 ${
-                isPlaying ? 'animate-pulse' : ''
-              } ${
                 isDarkMode 
                   ? 'bg-gradient-to-r from-blue-400 to-purple-400' 
                   : 'bg-gradient-to-r from-blue-500 to-purple-500'
               }`}
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                width: `${Math.random() * 6 + 2}px`,
-                height: `${Math.random() * 6 + 2}px`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${Math.random() * 4 + 2}s`,
+                left: `${particle.x}%`,
+                top: `${particle.y}%`,
+                width: `${particle.size}px`,
+                height: `${particle.size}px`,
+                opacity: particle.opacity,
+                transform: `translate(-50%, -50%)`,
               }}
-              onClick={() => {
+              onClick={(e) => {
+                // Create ripple effect
                 const ripple = document.createElement('div');
                 ripple.className = `absolute rounded-full opacity-50 animate-ping pointer-events-none ${
                   isDarkMode ? 'bg-blue-400' : 'bg-blue-600'
                 }`;
                 ripple.style.width = '20px';
                 ripple.style.height = '20px';
-                ripple.style.left = `${Math.random() * 100}%`;
-                ripple.style.top = `${Math.random() * 100}%`;
-                document.querySelector('.particle-container')?.appendChild(ripple);
+                ripple.style.left = `${e.clientX}px`;
+                ripple.style.top = `${e.clientY}px`;
+                ripple.style.transform = 'translate(-50%, -50%)';
+                document.body.appendChild(ripple);
                 setTimeout(() => ripple.remove(), 1000);
               }}
             />
           ))}
         </div>
-        <div className="particle-container absolute inset-0"></div>
+
+        {/* Parallax background elements */}
+        <div className="absolute inset-0 opacity-20">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className={`absolute rounded-full ${
+                isDarkMode ? 'bg-white' : 'bg-gray-900'
+              }`}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                width: `${Math.random() * 100 + 50}px`,
+                height: `${Math.random() * 100 + 50}px`,
+                transform: `translateY(${Math.sin(Date.now() * 0.001 + i) * 20}px)`,
+                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 2}s`
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
@@ -122,6 +187,21 @@ const Hero = () => {
           >
             <ExternalLink className="w-4 h-4" />
             Live Simulation
+          </button>
+        </div>
+
+        {/* Experiment navigation */}
+        <div className="flex justify-center mb-8">
+          <button
+            onClick={onNavigateToExperiment}
+            className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-300 transform hover:scale-105 group ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white hover:from-green-600 hover:to-teal-600 hover:shadow-lg hover:shadow-green-500/25' 
+                : 'bg-gradient-to-r from-green-600 to-teal-600 text-white hover:from-green-700 hover:to-teal-700 hover:shadow-lg hover:shadow-green-600/25'
+            }`}
+          >
+            <span>View Our Experiment</span>
+            <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
           </button>
         </div>
 
@@ -182,6 +262,10 @@ const Hero = () => {
         @keyframes slide-up {
           from { opacity: 0; transform: translateY(30px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
         }
         .animate-fade-in {
           animation: fade-in 1s ease-out;

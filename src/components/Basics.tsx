@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Atom, Zap, Sun, Flame, ChevronRight, Info } from 'lucide-react';
 
 const Basics = () => {
   const [selectedCard, setSelectedCard] = useState(0);
   const [isAutoPlay, setIsAutoPlay] = useState(true);
   const [hoveredFact, setHoveredFact] = useState<number | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   const cards = [
     {
@@ -43,6 +45,24 @@ const Basics = () => {
     { value: "E=mc²", label: "Einstein's mass-energy equation", color: "orange" }
   ];
 
+  // Intersection Observer for scroll animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     if (isAutoPlay) {
       const interval = setInterval(() => {
@@ -63,9 +83,30 @@ const Basics = () => {
   };
 
   return (
-    <section id="basics" className="py-20 bg-slate-800">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
+    <section 
+      id="basics" 
+      ref={sectionRef}
+      className="py-20 bg-slate-800 relative overflow-hidden"
+    >
+      {/* Parallax background elements */}
+      <div className="absolute inset-0 opacity-10">
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-gradient-to-r from-blue-400 to-purple-400 parallax-element"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${Math.random() * 60 + 20}px`,
+              height: `${Math.random() * 60 + 20}px`,
+              animationDelay: `${Math.random() * 6}s`
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="container mx-auto px-6 relative z-10">
+        <div className={`text-center mb-16 ${isVisible ? 'animate-on-scroll animate-fade-in' : 'animate-on-scroll'}`}>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             Understanding Fusion Basics
           </h2>
@@ -75,8 +116,8 @@ const Basics = () => {
         </div>
 
         {/* Interactive Card Selector */}
-        <div className="flex justify-center mb-8">
-          <div className="flex gap-2 bg-slate-700/50 rounded-full p-2">
+        <div className={`flex justify-center mb-8 ${isVisible ? 'animate-on-scroll animate-scale-up' : 'animate-on-scroll'}`} style={{ animationDelay: '0.2s' }}>
+          <div className="flex gap-2 bg-slate-700/50 rounded-full p-2 backdrop-blur-sm">
             {cards.map((_, index) => (
               <button
                 key={index}
@@ -93,8 +134,8 @@ const Basics = () => {
         </div>
 
         {/* Main Interactive Card Display */}
-        <div className="max-w-4xl mx-auto mb-12">
-          <div className={`rounded-2xl p-8 border-2 transition-all duration-500 transform ${getColorClasses(cards[selectedCard].color)}`}>
+        <div className={`max-w-4xl mx-auto mb-12 ${isVisible ? 'animate-on-scroll animate-slide-left' : 'animate-on-scroll'}`} style={{ animationDelay: '0.4s' }}>
+          <div className={`rounded-2xl p-8 border-2 transition-all duration-500 transform hover:scale-105 ${getColorClasses(cards[selectedCard].color)}`}>
             <div className="flex items-center mb-6">
               <div className="transform hover:rotate-12 transition-transform duration-300">
                 {cards[selectedCard].icon}
@@ -111,7 +152,7 @@ const Basics = () => {
         </div>
 
         {/* Card Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto mb-16">
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto mb-16 ${isVisible ? 'animate-on-scroll animate-slide-right' : 'animate-on-scroll'}`} style={{ animationDelay: '0.6s' }}>
           {cards.map((card, index) => (
             <div
               key={index}
@@ -134,7 +175,7 @@ const Basics = () => {
         </div>
 
         {/* Interactive Facts Section */}
-        <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl p-8 border border-blue-500/30">
+        <div className={`bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl p-8 border border-blue-500/30 backdrop-blur-sm ${isVisible ? 'animate-on-scroll animate-fade-in' : 'animate-on-scroll'}`} style={{ animationDelay: '0.8s' }}>
           <h3 className="text-2xl font-bold text-white mb-6 text-center">Key Fusion Facts</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {facts.map((fact, index) => (
@@ -164,10 +205,10 @@ const Basics = () => {
         </div>
 
         {/* Auto-play toggle */}
-        <div className="flex justify-center mt-8">
+        <div className={`flex justify-center mt-8 ${isVisible ? 'animate-on-scroll animate-scale-up' : 'animate-on-scroll'}`} style={{ animationDelay: '1s' }}>
           <button
             onClick={() => setIsAutoPlay(!isAutoPlay)}
-            className={`px-4 py-2 rounded-full text-sm transition-all duration-300 ${
+            className={`px-4 py-2 rounded-full text-sm transition-all duration-300 transform hover:scale-105 ${
               isAutoPlay 
                 ? 'bg-blue-500 text-white hover:bg-blue-600' 
                 : 'bg-slate-600 text-gray-300 hover:bg-slate-500'

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Zap, Thermometer, Target } from 'lucide-react';
 
 const Process = () => {
@@ -8,6 +8,8 @@ const Process = () => {
   const [pressure, setPressure] = useState(0);
   const [energyOutput, setEnergyOutput] = useState(0);
   const [userControlled, setUserControlled] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   const steps = [
     {
@@ -39,6 +41,24 @@ const Process = () => {
       energy: 100
     }
   ];
+
+  // Intersection Observer for scroll animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (isAnimating && !userControlled) {
@@ -104,9 +124,30 @@ const Process = () => {
   };
 
   return (
-    <section id="process" className="py-20 bg-gradient-to-br from-slate-900 to-blue-900">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
+    <section 
+      id="process" 
+      ref={sectionRef}
+      className="py-20 bg-gradient-to-br from-slate-900 to-blue-900 relative overflow-hidden"
+    >
+      {/* Parallax background elements */}
+      <div className="absolute inset-0 opacity-10">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-gradient-to-r from-blue-400 to-cyan-400 parallax-element"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${Math.random() * 40 + 10}px`,
+              height: `${Math.random() * 40 + 10}px`,
+              animationDelay: `${Math.random() * 6}s`
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="container mx-auto px-6 relative z-10">
+        <div className={`text-center mb-16 ${isVisible ? 'animate-on-scroll animate-fade-in' : 'animate-on-scroll'}`}>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             Interactive Fusion Process
           </h2>
@@ -117,7 +158,7 @@ const Process = () => {
 
         <div className="max-w-6xl mx-auto">
           {/* Interactive Animation */}
-          <div className="bg-slate-800/50 rounded-2xl p-8 mb-12 backdrop-blur-sm border border-slate-600/50">
+          <div className={`bg-slate-800/50 rounded-2xl p-8 mb-12 backdrop-blur-sm border border-slate-600/50 ${isVisible ? 'animate-on-scroll animate-slide-left' : 'animate-on-scroll'}`} style={{ animationDelay: '0.2s' }}>
             <div className="flex justify-center mb-8">
               <div className="relative w-96 h-80 bg-gradient-to-br from-slate-700/50 to-slate-800/50 rounded-xl flex items-center justify-center overflow-hidden border border-slate-600/30">
                 {/* Temperature indicator */}
@@ -204,7 +245,7 @@ const Process = () => {
             </div>
 
             {/* Interactive Controls */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 ${isVisible ? 'animate-on-scroll animate-slide-right' : 'animate-on-scroll'}`} style={{ animationDelay: '0.4s' }}>
               <div className="bg-slate-700/30 rounded-xl p-4">
                 <label className="block text-white text-sm font-medium mb-2">Temperature (Million °C)</label>
                 <input
@@ -252,7 +293,7 @@ const Process = () => {
               </div>
             </div>
 
-            <div className="flex justify-center gap-4 mb-6">
+            <div className={`flex justify-center gap-4 mb-6 ${isVisible ? 'animate-on-scroll animate-scale-up' : 'animate-on-scroll'}`} style={{ animationDelay: '0.6s' }}>
               <button
                 onClick={startAnimation}
                 className="flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-300 transform hover:scale-105"
@@ -276,7 +317,7 @@ const Process = () => {
           </div>
 
           {/* Interactive Step Selector */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${isVisible ? 'animate-on-scroll animate-fade-in' : 'animate-on-scroll'}`} style={{ animationDelay: '0.8s' }}>
             {steps.map((stepItem, index) => (
               <div
                 key={index}
