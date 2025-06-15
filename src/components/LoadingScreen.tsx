@@ -104,7 +104,7 @@ const LoadingScreen = () => {
             </defs>
           </svg>
           
-          {/* Progress percentage */}
+          {/* Progress percentage - positioned correctly */}
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-2xl font-bold text-white">{progress}%</span>
           </div>

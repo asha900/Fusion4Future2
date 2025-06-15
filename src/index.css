@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hide scrollbar but keep functionality */
+/* Hide scrollbar completely */
 * {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* Internet Explorer 10+ */
@@ -12,9 +12,10 @@
   display: none; /* WebKit */
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
+/* Prevent default scrolling */
+html, body {
+  overflow: hidden;
+  height: 100%;
 }
 
 /* Custom animations */
@@ -104,7 +105,12 @@ html {
   animation-delay: -4s;
 }
 
-/* Custom scrollbar for specific elements that need it */
+/* Slide transitions */
+.slide-transition {
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scrollbar for specific elements that need it (like iframes) */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(59, 130, 246, 0.5) transparent;

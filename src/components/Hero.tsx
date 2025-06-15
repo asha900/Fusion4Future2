@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Play, Pause, ExternalLink } from 'lucide-react';
+import { ChevronRight, Play, Pause, ExternalLink } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface HeroProps {
-  onNavigateToExperiment: () => void;
+  onNavigateToExperiment?: () => void;
+  isActive?: boolean;
 }
 
-const Hero: React.FC<HeroProps> = ({ onNavigateToExperiment }) => {
+const Hero: React.FC<HeroProps> = ({ onNavigateToExperiment, isActive = true }) => {
   const [isPlaying, setIsPlaying] = useState(true);
-  const [particleCount, setParticleCount] = useState(50);
-  const [particles, setParticles] = useState<Array<{
+  const [stars, setStars] = useState<Array<{
     id: number;
     x: number;
     y: number;
@@ -17,119 +17,99 @@ const Hero: React.FC<HeroProps> = ({ onNavigateToExperiment }) => {
     vy: number;
     size: number;
     opacity: number;
+    twinkle: number;
   }>>([]);
   const { isDarkMode } = useTheme();
-
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const toggleAnimation = () => {
-    setIsPlaying(!isPlaying);
-  };
-
-  const adjustParticles = (count: number) => {
-    setParticleCount(count);
-  };
 
   const openSimulation = () => {
     window.open('https://visualize-it.github.io/nuclear_fusion/simulation.html', '_blank');
   };
 
-  // Initialize and animate particles
+  // Initialize stars
   useEffect(() => {
-    const newParticles = Array.from({ length: particleCount }, (_, i) => ({
+    const newStars = Array.from({ length: 80 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
-      vx: (Math.random() - 0.5) * 0.5,
-      vy: (Math.random() - 0.5) * 0.5,
-      size: Math.random() * 4 + 2,
-      opacity: Math.random() * 0.8 + 0.2
+      vx: (Math.random() - 0.5) * 0.02,
+      vy: (Math.random() - 0.5) * 0.02,
+      size: Math.random() * 1.5 + 0.5,
+      opacity: Math.random() * 0.8 + 0.2,
+      twinkle: Math.random() * Math.PI * 2
     }));
-    setParticles(newParticles);
-  }, [particleCount]);
+    setStars(newStars);
+  }, []);
 
+  // Animate stars
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || !isActive) return;
 
     const interval = setInterval(() => {
-      setParticles(prevParticles => 
-        prevParticles.map(particle => ({
-          ...particle,
-          x: (particle.x + particle.vx + 100) % 100,
-          y: (particle.y + particle.vy + 100) % 100,
-          opacity: 0.2 + Math.sin(Date.now() * 0.001 + particle.id) * 0.3 + 0.3
+      setStars(prevStars => 
+        prevStars.map(star => ({
+          ...star,
+          x: (star.x + star.vx + 100) % 100,
+          y: (star.y + star.vy + 100) % 100,
+          twinkle: star.twinkle + 0.05,
+          opacity: 0.2 + Math.sin(star.twinkle) * 0.3 + 0.3
         }))
       );
     }, 50);
 
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [isPlaying, isActive]);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Parallax background layers */}
+    <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      {/* Animated star field background */}
       <div className={`absolute inset-0 transition-all duration-500 ${
         isDarkMode 
           ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900' 
           : 'bg-gradient-to-br from-blue-50 via-indigo-100 to-purple-100'
       }`}>
-        {/* Animated particles */}
+        {/* Floating stars */}
         <div className="absolute inset-0">
-          {particles.map((particle) => (
+          {stars.map((star) => (
             <div
-              key={particle.id}
-              className={`absolute rounded-full cursor-pointer hover:scale-150 transition-transform duration-300 ${
+              key={star.id}
+              className={`absolute rounded-full transition-opacity duration-100 ${
                 isDarkMode 
-                  ? 'bg-gradient-to-r from-blue-400 to-purple-400' 
-                  : 'bg-gradient-to-r from-blue-500 to-purple-500'
+                  ? 'bg-white' 
+                  : 'bg-gray-800'
               }`}
               style={{
-                left: `${particle.x}%`,
-                top: `${particle.y}%`,
-                width: `${particle.size}px`,
-                height: `${particle.size}px`,
-                opacity: particle.opacity,
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                opacity: star.opacity,
                 transform: `translate(-50%, -50%)`,
-              }}
-              onClick={(e) => {
-                // Create ripple effect
-                const ripple = document.createElement('div');
-                ripple.className = `absolute rounded-full opacity-50 animate-ping pointer-events-none ${
-                  isDarkMode ? 'bg-blue-400' : 'bg-blue-600'
-                }`;
-                ripple.style.width = '20px';
-                ripple.style.height = '20px';
-                ripple.style.left = `${e.clientX}px`;
-                ripple.style.top = `${e.clientY}px`;
-                ripple.style.transform = 'translate(-50%, -50%)';
-                document.body.appendChild(ripple);
-                setTimeout(() => ripple.remove(), 1000);
+                boxShadow: isDarkMode 
+                  ? `0 0 ${star.size * 2}px rgba(255, 255, 255, ${star.opacity * 0.5})`
+                  : `0 0 ${star.size * 2}px rgba(0, 0, 0, ${star.opacity * 0.3})`
               }}
             />
           ))}
         </div>
 
-        {/* Parallax background elements */}
+        {/* Subtle nebula effect */}
         <div className="absolute inset-0 opacity-20">
-          {[...Array(20)].map((_, i) => (
+          {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className={`absolute rounded-full ${
-                isDarkMode ? 'bg-white' : 'bg-gray-900'
+              className={`absolute rounded-full blur-3xl ${
+                isDarkMode 
+                  ? 'bg-gradient-to-r from-blue-400/30 to-purple-400/30' 
+                  : 'bg-gradient-to-r from-blue-300/40 to-purple-300/40'
               }`}
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                width: `${Math.random() * 100 + 50}px`,
-                height: `${Math.random() * 100 + 50}px`,
-                transform: `translateY(${Math.sin(Date.now() * 0.001 + i) * 20}px)`,
-                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
-                animationDelay: `${Math.random() * 2}s`
+                width: `${Math.random() * 300 + 200}px`,
+                height: `${Math.random() * 300 + 200}px`,
+                transform: `translateY(${Math.sin(Date.now() * 0.0005 + i) * 30}px)`,
+                animation: `float ${8 + Math.random() * 4}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 4}s`
               }}
             />
           ))}
@@ -158,31 +138,11 @@ const Hero: React.FC<HeroProps> = ({ onNavigateToExperiment }) => {
         {/* Interactive controls */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
           <button
-            onClick={() => scrollToSection('basics')}
-            className={`px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 ${
+            onClick={openSimulation}
+            className={`flex items-center gap-2 px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 ${
               isDarkMode 
                 ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 hover:shadow-lg hover:shadow-blue-500/25' 
                 : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:shadow-lg hover:shadow-blue-600/25'
-            }`}
-          >
-            Explore the Science
-          </button>
-          <button
-            onClick={() => scrollToSection('process')}
-            className={`px-8 py-3 rounded-full transition-all duration-300 border-2 hover:shadow-lg ${
-              isDarkMode 
-                ? 'border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white hover:shadow-blue-400/25' 
-                : 'border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white hover:shadow-blue-600/25'
-            }`}
-          >
-            How It Works
-          </button>
-          <button
-            onClick={openSimulation}
-            className={`flex items-center gap-2 px-8 py-3 rounded-full transition-all duration-300 border-2 hover:shadow-lg ${
-              isDarkMode 
-                ? 'border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white hover:shadow-purple-400/25' 
-                : 'border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:shadow-purple-600/25'
             }`}
           >
             <ExternalLink className="w-4 h-4" />
@@ -191,24 +151,26 @@ const Hero: React.FC<HeroProps> = ({ onNavigateToExperiment }) => {
         </div>
 
         {/* Experiment navigation */}
-        <div className="flex justify-center mb-8">
-          <button
-            onClick={onNavigateToExperiment}
-            className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-300 transform hover:scale-105 group ${
-              isDarkMode 
-                ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white hover:from-green-600 hover:to-teal-600 hover:shadow-lg hover:shadow-green-500/25' 
-                : 'bg-gradient-to-r from-green-600 to-teal-600 text-white hover:from-green-700 hover:to-teal-700 hover:shadow-lg hover:shadow-green-600/25'
-            }`}
-          >
-            <span>View Our Experiment</span>
-            <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-          </button>
-        </div>
+        {onNavigateToExperiment && (
+          <div className="flex justify-center mb-8">
+            <button
+              onClick={onNavigateToExperiment}
+              className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-300 transform hover:scale-105 group ${
+                isDarkMode 
+                  ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white hover:from-green-600 hover:to-teal-600 hover:shadow-lg hover:shadow-green-500/25' 
+                  : 'bg-gradient-to-r from-green-600 to-teal-600 text-white hover:from-green-700 hover:to-teal-700 hover:shadow-lg hover:shadow-green-600/25'
+              }`}
+            >
+              <span>View Our Experiment</span>
+              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+            </button>
+          </div>
+        )}
 
-        {/* Animation controls */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+        {/* Animation control */}
+        <div className="flex justify-center items-center mb-8">
           <button
-            onClick={toggleAnimation}
+            onClick={() => setIsPlaying(!isPlaying)}
             className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 backdrop-blur-sm ${
               isDarkMode 
                 ? 'bg-slate-700/50 text-white hover:bg-slate-600/50' 
@@ -216,43 +178,20 @@ const Hero: React.FC<HeroProps> = ({ onNavigateToExperiment }) => {
             }`}
           >
             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            {isPlaying ? 'Pause' : 'Play'} Animation
+            {isPlaying ? 'Pause' : 'Play'} Stars
           </button>
-          <div className="flex items-center gap-2">
-            <span className={`text-sm transition-colors duration-500 ${
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}>
-              Particles:
-            </span>
-            <input
-              type="range"
-              min="10"
-              max="100"
-              value={particleCount}
-              onChange={(e) => adjustParticles(parseInt(e.target.value))}
-              className={`w-20 h-2 rounded-lg appearance-none cursor-pointer slider ${
-                isDarkMode ? 'bg-slate-600' : 'bg-gray-300'
-              }`}
-            />
-            <span className={`text-sm transition-colors duration-500 ${
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}>
-              {particleCount}
-            </span>
+        </div>
+
+        {/* Scroll hint */}
+        <div className={`text-center ${
+          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+        }`}>
+          <div className="text-sm mb-2">Scroll to explore</div>
+          <div className="w-6 h-10 border-2 border-current rounded-full mx-auto relative">
+            <div className="w-1 h-3 bg-current rounded-full absolute top-2 left-1/2 transform -translate-x-1/2 animate-bounce" />
           </div>
         </div>
       </div>
-
-      <button
-        onClick={() => scrollToSection('basics')}
-        className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce transition-colors duration-500 ${
-          isDarkMode 
-            ? 'text-white hover:text-blue-400' 
-            : 'text-gray-900 hover:text-blue-600'
-        }`}
-      >
-        <ChevronDown className="w-8 h-8" />
-      </button>
 
       <style jsx>{`
         @keyframes fade-in {
@@ -272,14 +211,6 @@ const Hero: React.FC<HeroProps> = ({ onNavigateToExperiment }) => {
         }
         .animate-slide-up {
           animation: slide-up 1s ease-out 0.3s both;
-        }
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: ${isDarkMode ? '#3b82f6' : '#1d4ed8'};
-          cursor: pointer;
         }
       `}</style>
     </section>
