@@ -13,12 +13,15 @@ import Projects from './components/Projects';
 import Future from './components/Future';
 import Footer from './components/Footer';
 import SlideIndicator from './components/SlideIndicator';
+import NavigationButtons from './components/NavigationButtons';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState('main');
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [autoPlayEnabled, setAutoPlayEnabled] = useState(false);
+  const [showKeyboardHints, setShowKeyboardHints] = useState(true);
 
   const slides = [
     { id: 'hero', component: Hero, name: 'Home' },
@@ -39,65 +42,91 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Auto-play functionality
+  useEffect(() => {
+    if (autoPlayEnabled && currentPage === 'main' && !isTransitioning) {
+      const interval = setInterval(() => {
+        setCurrentSlide(prev => (prev + 1) % slides.length);
+      }, 8000); // 8 seconds per slide
+      return () => clearInterval(interval);
+    }
+  }, [autoPlayEnabled, currentPage, isTransitioning, slides.length]);
+
+  // Hide keyboard hints after 10 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowKeyboardHints(false);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (currentPage !== 'main') return;
 
     let isScrolling = false;
     let scrollTimeout: NodeJS.Timeout;
+    let lastScrollTime = 0;
+    const scrollCooldown = 1000; // 1 second cooldown between scrolls
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       
-      if (isTransitioning || isScrolling) return;
+      const now = Date.now();
+      if (isTransitioning || isScrolling || (now - lastScrollTime) < scrollCooldown) return;
       
       isScrolling = true;
+      lastScrollTime = now;
       clearTimeout(scrollTimeout);
       
       const direction = e.deltaY > 0 ? 1 : -1;
       const newSlide = Math.max(0, Math.min(slides.length - 1, currentSlide + direction));
       
       if (newSlide !== currentSlide) {
-        setIsTransitioning(true);
-        setCurrentSlide(newSlide);
-        
-        setTimeout(() => {
-          setIsTransitioning(false);
-        }, 800);
+        navigateToSlide(newSlide);
       }
       
       scrollTimeout = setTimeout(() => {
         isScrolling = false;
-      }, 100);
+      }, scrollCooldown);
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTransitioning) return;
       
-      if (e.key === 'ArrowDown' || e.key === 'PageDown') {
-        e.preventDefault();
-        const newSlide = Math.min(slides.length - 1, currentSlide + 1);
-        if (newSlide !== currentSlide) {
-          setIsTransitioning(true);
-          setCurrentSlide(newSlide);
-          setTimeout(() => setIsTransitioning(false), 800);
-        }
-      } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
-        e.preventDefault();
-        const newSlide = Math.max(0, currentSlide - 1);
-        if (newSlide !== currentSlide) {
-          setIsTransitioning(true);
-          setCurrentSlide(newSlide);
-          setTimeout(() => setIsTransitioning(false), 800);
-        }
+      switch (e.key) {
+        case 'ArrowDown':
+        case 'PageDown':
+        case ' ': // Spacebar
+          e.preventDefault();
+          navigateToSlide(Math.min(slides.length - 1, currentSlide + 1));
+          break;
+        case 'ArrowUp':
+        case 'PageUp':
+          e.preventDefault();
+          navigateToSlide(Math.max(0, currentSlide - 1));
+          break;
+        case 'Home':
+          e.preventDefault();
+          navigateToSlide(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          navigateToSlide(slides.length - 1);
+          break;
+        case 'Escape':
+          setAutoPlayEnabled(false);
+          break;
       }
     };
 
-    // Touch handling for mobile
+    // Touch handling for mobile with improved sensitivity
     let touchStartY = 0;
     let touchEndY = 0;
+    let touchStartTime = 0;
 
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY = e.changedTouches[0].screenY;
+      touchStartTime = Date.now();
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
@@ -105,15 +134,15 @@ function App() {
       
       touchEndY = e.changedTouches[0].screenY;
       const deltaY = touchStartY - touchEndY;
+      const touchDuration = Date.now() - touchStartTime;
       
-      if (Math.abs(deltaY) > 50) { // Minimum swipe distance
+      // Require minimum swipe distance and maximum duration for responsiveness
+      if (Math.abs(deltaY) > 30 && touchDuration < 500) {
         const direction = deltaY > 0 ? 1 : -1;
         const newSlide = Math.max(0, Math.min(slides.length - 1, currentSlide + direction));
         
         if (newSlide !== currentSlide) {
-          setIsTransitioning(true);
-          setCurrentSlide(newSlide);
-          setTimeout(() => setIsTransitioning(false), 800);
+          navigateToSlide(newSlide);
         }
       }
     };
@@ -133,11 +162,15 @@ function App() {
   }, [currentSlide, isTransitioning, currentPage, slides.length]);
 
   const navigateToSlide = (slideIndex: number) => {
-    if (isTransitioning || slideIndex === currentSlide) return;
+    if (isTransitioning || slideIndex === currentSlide || slideIndex < 0 || slideIndex >= slides.length) return;
     
     setIsTransitioning(true);
     setCurrentSlide(slideIndex);
-    setTimeout(() => setIsTransitioning(false), 800);
+    setAutoPlayEnabled(false); // Disable auto-play when user manually navigates
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 1000); // Increased transition time for smoother animation
   };
 
   const navigateToExperiment = () => {
@@ -146,6 +179,10 @@ function App() {
 
   const navigateBack = () => {
     setCurrentPage('main');
+  };
+
+  const toggleAutoPlay = () => {
+    setAutoPlayEnabled(!autoPlayEnabled);
   };
 
   if (isLoading) {
@@ -168,8 +205,8 @@ function App() {
                 return (
                   <div
                     key={slide.id}
-                    className={`absolute inset-0 w-full h-full transition-transform duration-800 ease-in-out ${
-                      isTransitioning ? '' : 'transition-none'
+                    className={`absolute inset-0 w-full h-full transition-transform duration-1000 ease-in-out ${
+                      isTransitioning ? 'transition-transform' : ''
                     }`}
                     style={{
                       transform: `translateY(${offset}vh)`,
@@ -191,6 +228,52 @@ function App() {
               onNavigateToSlide={navigateToSlide}
               isTransitioning={isTransitioning}
             />
+
+            <NavigationButtons
+              currentSlide={currentSlide}
+              totalSlides={slides.length}
+              onNavigateToSlide={navigateToSlide}
+              isTransitioning={isTransitioning}
+              autoPlayEnabled={autoPlayEnabled}
+              onToggleAutoPlay={toggleAutoPlay}
+            />
+
+            {/* Keyboard Hints */}
+            {showKeyboardHints && (
+              <div className="fixed bottom-6 left-6 z-30 bg-slate-800/90 backdrop-blur-sm rounded-lg p-4 text-white text-sm animate-fade-in">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                  <span className="font-medium">Navigation Tips</span>
+                </div>
+                <div className="space-y-1 text-xs text-gray-300">
+                  <div>↑↓ Arrow keys or scroll to navigate</div>
+                  <div>Space/PageDown for next slide</div>
+                  <div>Home/End for first/last slide</div>
+                  <div>ESC to stop auto-play</div>
+                </div>
+                <button
+                  onClick={() => setShowKeyboardHints(false)}
+                  className="absolute top-1 right-2 text-gray-400 hover:text-white text-xs"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            {/* Progress Bar */}
+            <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-slate-700/50">
+              <div 
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000 ease-out"
+                style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}
+              />
+            </div>
+
+            {/* Auto-play indicator */}
+            {autoPlayEnabled && (
+              <div className="fixed top-20 right-6 z-40 bg-blue-500/90 backdrop-blur-sm rounded-full px-3 py-1 text-white text-xs animate-pulse">
+                Auto-play enabled
+              </div>
+            )}
           </>
         ) : (
           <ExperimentPage onNavigateBack={navigateBack} />
